@@ -1,0 +1,13 @@
+name: QumassoTNTRun
+version: '${project.version}'
+main: qumassotntrun.QumassoTNTRunPlugin
+api-version: '1.20'
+commands:
+  createarena:
+    usage: /createarena <arena-name> <min-players-to-start> <max-players> <floor-height>
+  setcorner:
+    usage: /setcorner <arena-name> <1 | 2>
+  setarenaspawn:
+    usage: /setarenaspawn <arena-name>
+  setspawn:
+    usage: /setspawn
