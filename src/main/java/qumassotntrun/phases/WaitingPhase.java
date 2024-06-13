@@ -25,6 +25,7 @@ public class WaitingPhase implements Phase {
 		if (game.containsPlayer(p) || !game.hasFreeSlots()) return false;
 		game.addPlayer(p);
 		if (game.hasMinPlayersForStart()) game.setPhase(new StartingPhase(game));
+		else game.updateBossbar(String.format("Waiting for people %d/%d", game.alivePlayers(), game.maxPlayers()), (double) game.alivePlayers() / game.maxPlayers());
 		return true;
 	}
 

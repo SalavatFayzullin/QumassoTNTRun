@@ -9,7 +9,7 @@ public class Utils {
 		p.getInventory().clear();
 		p.setHealth(20D);
 		p.setFireTicks(0);
-		QumassoTNTRunPlugin.getInstance().systemMessage(message, p);
+		if (message != null && !message.isEmpty()) QumassoTNTRunPlugin.getInstance().systemMessage(message, p);
 		if (location == null) location = p.getLocation();
 		p.teleport(location);
 		p.setGameMode(GameMode.ADVENTURE);

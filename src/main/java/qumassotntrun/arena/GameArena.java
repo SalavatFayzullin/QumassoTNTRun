@@ -30,9 +30,11 @@ public class GameArena {
 	private BlockData[][][] region;
 	private List<Item> spawnedBonuses = new ArrayList<>();
 	private Random random = new Random();
+	private ArenaManager arenaManager;
 
-	public GameArena(ArenaModel model) {
+	public GameArena(ArenaModel model, ArenaManager arenaManager) {
 		this.model = model;
+		this.arenaManager = arenaManager;
 		save();
 		restart();
 	}
@@ -104,6 +106,7 @@ public class GameArena {
 				}
 			}
 		}
+
 	}
 
 	public void broadcast(String message) {
@@ -133,11 +136,21 @@ public class GameArena {
 			Utils.cleanup(p, "", QumassoTNTRunPlugin.getInstance().getSpawn());
 			QumassoTNTRunPlugin.getInstance().giveInitialItems(p);
 			p.setAllowFlight(false);
+			Utils.cleanup(p, "The game is ended", QumassoTNTRunPlugin.getInstance().getSpawn());
+			QumassoTNTRunPlugin.getInstance().playerJoined(p);
 		});
 		if (spectators != null) spectators.forEach(p -> {
 			Utils.cleanup(p, "", QumassoTNTRunPlugin.getInstance().getSpawn());
 			QumassoTNTRunPlugin.getInstance().giveInitialItems(p);
 			p.setAllowFlight(false);
+			Utils.cleanup(p, "The game is ended", QumassoTNTRunPlugin.getInstance().getSpawn());
+			QumassoTNTRunPlugin.getInstance().playerJoined(p);
+		});
+		Bukkit.getOnlinePlayers().forEach(p -> {
+			spectators.forEach(spectator -> {
+				if (spectator == p) return;
+				p.showPlayer(QumassoTNTRunPlugin.getInstance(), spectator);
+			});
 		});
 		alivePlayers = new ArrayList<>();
 		spectators = new ArrayList<>();
@@ -146,6 +159,7 @@ public class GameArena {
 			bonus.remove();
 		});
 		spawnedBonuses.clear();
+		arenaManager.updateArenasList();
 	}
 
 	public int floorHeight() {
@@ -168,6 +182,16 @@ public class GameArena {
 	}
 
 	public boolean onPlayerJoined(Player joined) {
+		if (model.getFirstCorner() == null) {
+			QumassoTNTRunPlugin.getInstance().systemError("Sorry, but this arena has no properly configured corner #1, use /setcorner " + model.getName() + " 1", joined);
+			return false;
+		} else if (model.getSecondCorner() == null) {
+			QumassoTNTRunPlugin.getInstance().systemError("Sorry, but this arena has no properly configured corner #1, use /setcorner " + model.getName() + " 2", joined);
+			return false;
+		} else if (model.getArenaSpawn() == null) {
+			QumassoTNTRunPlugin.getInstance().systemError("Sorry, but this arena has no properly configured corner #1, use /setarenaspawn " + model.getName(), joined);
+			return false;
+		}
 		return current.onPlayerJoined(joined);
 	}
 
@@ -177,6 +201,11 @@ public class GameArena {
 		spectators.remove(quited);
 		current.onPlayerQuit(quited);
 		bar.removePlayer(quited);
+		Bukkit.getOnlinePlayers().forEach(p -> {
+			if (quited == p) return;
+			p.showPlayer(QumassoTNTRunPlugin.getInstance(), quited);
+		});
+		arenaManager.updateArenasList();
 		return true;
 	}
 
@@ -200,6 +229,7 @@ public class GameArena {
 		Utils.cleanup(p, "You joined the game " + model.getName(), loc);
 		bar.addPlayer(p);
 		QumassoTNTRunPlugin.getInstance().giveArenaItems(p);
+		arenaManager.updateArenasList();
 	}
 
 	public int alivePlayers() {

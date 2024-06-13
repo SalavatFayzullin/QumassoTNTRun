@@ -138,6 +138,10 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
                 systemError("Last two arguments should be integer", p);
                 e.printStackTrace();
             }
+        } else if (label.equalsIgnoreCase("setspawn")) {
+            getConfig().set("spawn", p.getLocation());
+            saveConfig();
+            systemMessage("You successfully set the global spawn", p);
         }
         return true;
     }
@@ -165,6 +169,13 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
         return getArena(name).isPresent();
     }
 
+    public void playerJoined(Player p) {
+        Location spawn = p.getLocation();
+        if (QumassoTNTRunPlugin.getInstance().getSpawn() != null) Utils.cleanup(p, "Welcome to TNT Run!", QumassoTNTRunPlugin.getInstance().getSpawn());
+        else Utils.cleanup(p, "Welcome to TNT Run!", spawn);
+        QumassoTNTRunPlugin.getInstance().giveInitialItems(p);
+    }
+
     @Override
     public void createArena(String name, int minPlayers, int maxPlayer, int floorheight) {
         ArenaModel model = new ArenaModel(name, minPlayers, maxPlayer, floorheight);
@@ -175,6 +186,7 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
                 break;
             }
         }
+        arenaManager.addArena(model);
         Bukkit.broadcast(Component.text("Arena %s has been created".formatted(name)));
         models.add(model);
         saveChanges();
@@ -186,6 +198,7 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
         if (!model.isPresent()) return;
         model.get().setArenaSpawn(loc);
         saveChanges();
+        Bukkit.getOnlinePlayers().forEach(p -> systemMessage("Successfully set the spawn for arena " + arena, p));
     }
 
     @Override
@@ -194,6 +207,8 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
         if (!model.isPresent()) return;
         model.get().setFirstCorner(loc);
         saveChanges();
+        Bukkit.getOnlinePlayers().forEach(p -> systemMessage("Successfully set the first corner for arena " + arena, p));
+        checkArenaForSaving(arena);
     }
 
     private void saveChanges() {
@@ -207,6 +222,12 @@ public final class QumassoTNTRunPlugin extends JavaPlugin implements ArenaConfig
         if (!model.isPresent()) return;
         model.get().setSecondCorner(loc);
         saveChanges();
+        Bukkit.getOnlinePlayers().forEach(p -> systemMessage("Successfully set the second corner for arena " + arena, p));
+        checkArenaForSaving(arena);
+    }
+
+    private void checkArenaForSaving(String arenaName) {
+        arenaManager.checkArenaForSaving(arenaName);
     }
 
     public void systemMessage(String message, Player receiver) {

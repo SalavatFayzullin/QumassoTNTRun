@@ -8,12 +8,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import qumassotntrun.QumassoTNTRunPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +24,9 @@ import java.util.Objects;
 public class ArenaManager implements Listener {
 	private List<GameArena> arenas = new ArrayList<>();
 	private Inventory arenasInventory = Bukkit.createInventory(null, 3 * 9);
-	private List<Player> openedInventoryPlayers = new ArrayList<>();
 
 	public void addArena(ArenaModel model) {
-		arenas.add(new GameArena(model));
+		arenas.add(new GameArena(model, this));
 	}
 
 	public void openArenasList(Player p) {
@@ -47,7 +48,7 @@ public class ArenaManager implements Listener {
 		}
 	}
 
-	private void updateArenasList() {
+	public void updateArenasList() {
 		for (int i = 0; i < arenas.size(); i++) {
 			ItemStack arenaItem = new ItemStack(Material.SLIME_BALL);
 			ItemMeta meta = arenaItem.getItemMeta();
@@ -56,7 +57,6 @@ public class ArenaManager implements Listener {
 			arenaItem.setItemMeta(meta);
 			arenasInventory.setItem(i, arenaItem);
 		}
-		for (Player p : openedInventoryPlayers) p.updateInventory();
 	}
 
 	@EventHandler
@@ -69,10 +69,20 @@ public class ArenaManager implements Listener {
 		}
 	}
 
+	public void checkArenaForSaving(String arenaName) {
+		for (GameArena game : arenas) {
+			if (game.name().equals(arenaName)) {
+				game.save();
+				break;
+			}
+		}
+	}
+
 	@EventHandler
 	private void onDamage(EntityDamageEvent e) {
 		if (!(e.getEntity() instanceof Player)) return;
 		if (e.getCause() == EntityDamageEvent.DamageCause.FALL) return;
+		if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
 		Player p = (Player) e.getEntity();
 		for (GameArena arena : arenas) {
 			if (arena.containsPlayer(p)) {
@@ -80,6 +90,7 @@ public class ArenaManager implements Listener {
 				return;
 			}
 		}
+		p.teleport(QumassoTNTRunPlugin.getInstance().getSpawn());
 	}
 
 	@EventHandler
@@ -105,20 +116,9 @@ public class ArenaManager implements Listener {
 	}
 
 	@EventHandler
-	private void onInventoryOpen(InventoryOpenEvent e) {
-		if (e.getInventory() == arenasInventory) openedInventoryPlayers.add((Player) e.getPlayer());
-	}
-
-	@EventHandler
-	private void onInventoryClose(InventoryCloseEvent e) {
-		if (e.getInventory() == arenasInventory) openedInventoryPlayers.remove((Player) e.getPlayer());
-	}
-
-	@EventHandler
 	private void onQuit(PlayerQuitEvent e) {
 		for (GameArena arena : arenas) {
 			if (arena.onPlayerQuit(e.getPlayer())) break;
 		}
-		openedInventoryPlayers.remove(e.getPlayer());
 	}
 }

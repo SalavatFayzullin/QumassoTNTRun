@@ -12,10 +12,7 @@ import qumassotntrun.Utils;
 public class PlayerManager implements Listener {
 	@EventHandler
 	private void onJoin(PlayerJoinEvent e) {
-		Location spawn = e.getPlayer().getLocation();
-		if (QumassoTNTRunPlugin.getInstance().getSpawn() != null) Utils.cleanup(e.getPlayer(), "Welcome to TNT Run!", QumassoTNTRunPlugin.getInstance().getSpawn());
-		else Utils.cleanup(e.getPlayer(), "Welcome to TNT Run!", spawn);
-		QumassoTNTRunPlugin.getInstance().giveInitialItems(e.getPlayer());
+		QumassoTNTRunPlugin.getInstance().playerJoined(e.getPlayer());
 	}
 
 	@EventHandler
